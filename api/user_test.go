@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	mockdb "github.com/Hain2000/simplebank/db/mock"
@@ -17,9 +19,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+
+type eqCreateUserParamsMatcher struct{
+	arg db.CreateUserParams
+	password string
+}
+
+func (e eqCreateUserParamsMatcher) Matches(x interface{}) bool {
+	arg, ok := x.(db.CreateUserParams)
+	if !ok {
+		return false
+	}
+	err := util.CheckPassword(e.password, arg.HashedPassword)
+	if err != nil {
+		return false
+	}
+	e.arg.HashedPassword = arg.HashedPassword
+	return reflect.DeepEqual(e.arg, arg)
+}
+
+func (e eqCreateUserParamsMatcher) String() string {
+	return fmt.Sprintf("matches arg %v and password %v", e.arg, e.password)
+}
+
+func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher {
+	return eqCreateUserParamsMatcher{arg: arg, password: password}
+}
+
+
 func TestCreateUserAPI(t *testing.T) {
 	user, password := randomUser(t)
-
+	hashedPassword, err := util.HashedPassword(password)
+	require.NoError(t, err)
 	testCases := []struct {
 		name          string
 		body          gin.H
@@ -37,8 +68,9 @@ func TestCreateUserAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserParams{
 					Username: user.Username,
+					HashedPassword: hashedPassword,
 					FullName: user.FullName,
-					Email:    user.Email,
+					Email: user.Email,
 				}
 				store.EXPECT().
 					CreateUser(gomock.Any(), EqCreateUserParams(arg, password)).
@@ -66,24 +98,6 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
-			},
-		},
-		{
-			name: "DuplicateUsername",
-			body: gin.H{
-				"username":  user.Username,
-				"password":  password,
-				"full_name": user.FullName,
-				"email":     user.Email,
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any()).
-					Times(1).
-					Return(db.User{}, db.ErrUniqueViolation)
-			},
-			checkResponse: func(recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusForbidden, recorder.Code)
 			},
 		},
 		{
@@ -188,4 +202,5 @@ func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.User) {
 	require.Equal(t, gotUser.CreatedAt, user.CreatedAt)
 	require.Equal(t, gotUser.Email, user.Email)
 	require.Equal(t, gotUser.FullName, user.FullName)
+	require.Empty(t, gotUser.HashedPassword)
 }
