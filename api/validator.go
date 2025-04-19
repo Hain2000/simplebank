@@ -6,8 +6,8 @@ import (
 )
 
 var validCurrency validator.Func = func(fl validator.FieldLevel) bool {
-	if currecny, ok := fl.Field().Interface().(string); ok {
-		return util.IsSupportedCurrency(currecny)
+	if currency, ok := fl.Field().Interface().(string); ok {
+		return util.IsSupportedCurrency(currency)
 	}
 	return false
 }

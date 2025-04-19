@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	authorizationHeaderKey  = "authoriztion"
+	authorizationHeaderKey  = "authorization"
 	authorizationTypeBearer = "bearer"
-	authorizationPayloadKey = "authorizaion_payload"
+	authorizationPayloadKey = "authorization_payload"
 )
 
 func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
