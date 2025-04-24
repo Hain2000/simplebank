@@ -1,6 +1,7 @@
 package token
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -61,4 +62,10 @@ func TestInvalidJWTTokenAlgNone(t *testing.T) {
 	require.Error(t, err)
 	require.EqualError(t, err, ErrInvalidToken.Error())
 	require.Nil(t, payload)
+}
+
+func TestA(t *testing.T) {
+	s := "   fly me   to   the moon  "
+	x := strings.Split(strings.Trim(s, " "), " ")
+	t.Log(x, len(x))
 }
