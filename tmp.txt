@@ -1,0 +1,12 @@
+{
+    "username": "chunyu",
+    "password": "123321",
+    "full_name": "lcy",
+    "email": "test@mail.com"
+}
+
+
+{
+    "username": "chunyu",
+    "password": "123321"
+}
