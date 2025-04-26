@@ -1,5 +1,6 @@
 #!/bin/sh
 
-make createdb
 make postgres
+sleep 3
+make createdb
 make migrateup
